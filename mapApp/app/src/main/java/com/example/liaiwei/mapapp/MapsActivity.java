@@ -1,22 +1,15 @@
 package com.example.liaiwei.mapapp;
 
-import android.location.Location;
-import android.location.LocationListener;
-import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -29,16 +22,18 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 public class MapsActivity extends FragmentActivity implements
         OnMapReadyCallback,
-        ActivityCompat.OnRequestPermissionsResultCallback, LocationListener
+        ActivityCompat.OnRequestPermissionsResultCallback
 
         {
 
 
     private GoogleMap mMap;
-    private MarkerOptions mp;
+    private Fragment frag;
+    private SupportMapFragment fm;
+    private Integer ch = 0;
 
 
-    @Override
+            @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
@@ -46,10 +41,9 @@ public class MapsActivity extends FragmentActivity implements
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        SupportMapFragment fm = (SupportMapFragment)
+        fm = (SupportMapFragment)
                 getSupportFragmentManager().findFragmentById(R.id.map);
-
+        //frag = (Fragment) findViewById(R.id.map);
     }
 
 
@@ -72,75 +66,27 @@ public class MapsActivity extends FragmentActivity implements
         mMap.moveCamera(CameraUpdateFactory.newLatLng(markham));
 
 
-
-
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            mMap.setMyLocationEnabled(true);
-
-        } else {
-// Show rationale and request permission.
-            Log.d("self", "didnt work");
+        if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
+            Log.d("self", "perm chekc 1 died");
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},2);
         }
 
+        if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
+            Log.d("self", "perm chekc 2 died");
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},2);
+        }
+
+        mMap.setMyLocationEnabled(true);
         //tries to find self
        // mMap.setOnMyLocationButtonClickListener(this);
        // enableMyLocation();
     }
-            @Override
-            public void onLocationChanged(Location location) {
-                mp = new MarkerOptions();
-                mp.position(new LatLng(location.getLatitude(), location.getLongitude()));
-                mp.title("my position");
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-
-            private void setUpMapIfNeeded() {
-                // Do a null check to confirm that we have not already instantiated the map.
-                if (mMap == null) {
-                    // Try to obtain the map from the SupportMapFragment.
-                    mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
-                            .getMap();
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PackageManager.PERMISSION_GRANTED) {
-                        mMap.setMyLocationEnabled(true);
-
-                    } else {
-// Show rationale and request permission.
-                        Log.d("self", "didnt work");
-                    }
-
-                    // Check if we were successful in obtaining the map.
-                    if (mMap != null) {
-
-
-                        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
-
-                            @Override
-                            public void onMyLocationChange(Location arg0) {
-                                // TODO Auto-generated method stub
-
-                                mMap.addMarker(new MarkerOptions().position(new LatLng(arg0.getLatitude(), arg0.getLongitude())).title("It's Me!"));
-                            }
-                        });
-
-                    }
-                }
-            }
-
+    public void changer(View v) {
+        if(ch%2==0){
+            mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+        } else {
+            mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        }
+        ch++;
+    }
         }
