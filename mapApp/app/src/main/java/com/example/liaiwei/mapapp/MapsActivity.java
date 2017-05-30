@@ -1,5 +1,7 @@
 package com.example.liaiwei.mapapp;
 
+import android.location.Location;
+import android.location.LocationManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -9,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -25,15 +28,16 @@ public class MapsActivity extends FragmentActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback
 
         {
-
-
+    private static final long MIN_TIME_BW_UPDATES = 15000;
+    private static final long MIN_DIST_CHANGE_FOR_UPDATES = 5;
     private GoogleMap mMap;
-    private Fragment frag;
-    private SupportMapFragment fm;
+    private LocationManager locationManager;
     private Integer ch = 0;
+    private boolean isNetworkenabled = false;
+    private boolean isGPSenabled = false;
+    private boolean canGetLocation = false;
 
-
-            @Override
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
@@ -41,8 +45,8 @@ public class MapsActivity extends FragmentActivity implements
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        fm = (SupportMapFragment)
-                getSupportFragmentManager().findFragmentById(R.id.map);
+       // fm = (SupportMapFragment)
+              //  getSupportFragmentManager().findFragmentById(R.id.map);
         //frag = (Fragment) findViewById(R.id.map);
     }
 
@@ -81,6 +85,53 @@ public class MapsActivity extends FragmentActivity implements
        // mMap.setOnMyLocationButtonClickListener(this);
        // enableMyLocation();
     }
+
+ /*   public void getLocation() {
+        try{
+            locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+            //get gps status
+            isGPSenabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            if(isGPSenabled) {
+                Log.d("self", "getLocation: GPS is enabled");
+            }
+
+            //get network status
+            isNetworkenabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            if(isNetworkenabled) {
+                Log.d("self", "getLocation: network is enabled");
+            }
+
+            if(!isNetworkenabled&&!isGPSenabled) {
+                Log.d("self", "getLocation: no provider enabled");
+            } else{
+                this.canGetLocation = true;
+                if(isNetworkenabled){
+                    Log.d("self", "getlocation network enabled - requesting lcoation updates");
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                            MIN_TIME_BW_UPDATES,
+                            MIN_DIST_CHANGE_FOR_UPDATES,
+                            locationListnerNetwork);
+                    Log.d("self", "getLocation network network getlocation upzte");
+                    Toast.makeText(this, "using network", Toast.LENGTH_SHORT);
+                }
+                if(isGPSenabled){
+                    Log.d("self", "getlocation network enabled - requesting lcoation updates");
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                            MIN_TIME_BW_UPDATES,
+                            MIN_DIST_CHANGE_FOR_UPDATES,
+                            locationListnerGPS);
+                    Log.d("self", "getLocatio gps is getting updates");
+                    Toast.makeText(this, "using gps", Toast.LENGTH_SHORT);
+                }
+            }
+
+        }catch(Exception e) {
+            Log.d("self", "caught exception in getlocation");
+            e.printStackTrace();
+        }
+    }
+*/
     public void changer(View v) {
         if(ch%2==0){
             mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
