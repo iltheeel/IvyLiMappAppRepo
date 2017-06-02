@@ -36,14 +36,13 @@ public class MapsActivity extends FragmentActivity implements
 {
     private static final long MIN_TIME_BW_UPDATES = 15000;
     private static final long MIN_DIST_CHANGE_FOR_UPDATES = 5;
-    private static final int MY_LOC_ZOOM_FACTOR = 15;
+    private static final int MY_LOC_ZOOM_FACTOR = 17;
     private GoogleMap mMap;
     private LocationManager locationManager;
     private Integer ch = 0;
     private boolean isNetworkenabled = false;
     private boolean isGPSenabled = false;
     private boolean canGetLocation = false;
-    private Location location;
     private Location myLocation;
     private LatLng userLocation;
 
@@ -90,13 +89,21 @@ public class MapsActivity extends FragmentActivity implements
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 2);
         }
 
-        mMap.setMyLocationEnabled(true);
+        // mMap.setMyLocationEnabled(true);
         //tries to find self
-        // mMap.setOnMyLocationButtonClickListener(this);
-        // enableMyLocation();
+
+    }
+
+    public void clear (View v) {
+        mMap.clear();
     }
 
     public void getLocation(View v) {
+        if (canGetLocation == true) {
+           canGetLocation = false;
+
+        } else {
+    canGetLocation= true;
         try {
             locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
@@ -152,143 +159,151 @@ public class MapsActivity extends FragmentActivity implements
         }
     }
 
-    android.location.LocationListener locationListnerNetwork = new android.location.LocationListener() {
+}
+        android.location.LocationListener locationListnerNetwork = new android.location.LocationListener() {
 
-        @Override
-        public void onLocationChanged(Location location) {
-            //output logd for network running
-            Log.d("self", "network is running");
-            //drop marker
-            dropmarker("hi");
+            @Override
+            public void onLocationChanged(Location location) {
+                //output logd for network running
+                Log.d("self", "network is running");
+                //drop marker
+                dropmarker("network");
 
-            //relaunch network provider (requestLocationUpdates (NETWORK_PROVIDER))
-            try {
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                        MIN_TIME_BW_UPDATES,
-                        MIN_DIST_CHANGE_FOR_UPDATES,
-                        locationListnerNetwork);
+                //relaunch network provider (requestLocationUpdates (NETWORK_PROVIDER))
+                try {
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                            MIN_TIME_BW_UPDATES,
+                            MIN_DIST_CHANGE_FOR_UPDATES,
+                            locationListnerNetwork);
 
-            } catch (SecurityException e) {
-                Log.d("self", "onstatuschangednetwork security exception 2");
+                } catch (SecurityException e) {
+                    Log.d("self", "onstatuschangednetwork security exception 2");
+                }
+
             }
 
-        }
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+                //output logd and stoast
+                switch (status) {
+                    case LocationProvider.AVAILABLE:
+                        Log.d("self", "location provider in onstatuschanged FOR NETWORKING is available");
+                        break;
+                    case LocationProvider.OUT_OF_SERVICE:
+                        Log.d("self", "location provider network out of service");
+                        Toast.makeText(getApplicationContext(), "tracker unavailable", Toast.LENGTH_SHORT).show();
+                        break;
+                    case LocationProvider.TEMPORARILY_UNAVAILABLE:
+                        Log.d("self", "location provider network out of service");
+                        try {
+                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                                    MIN_TIME_BW_UPDATES,
+                                    MIN_DIST_CHANGE_FOR_UPDATES,
+                                    locationListnerNetwork);
 
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            //output logd and stoast
-            switch (status) {
-                case LocationProvider.AVAILABLE:
-                    Log.d("self", "location provider in onstatuschanged FOR NETWORKING is available");
-                    break;
-                case LocationProvider.OUT_OF_SERVICE:
-                    Log.d("self", "location provider network out of service");
-                    break;
-                case LocationProvider.TEMPORARILY_UNAVAILABLE:
-                    Log.d("self", "location provider network out of service");
-                    break;
-                default:
-                    Log.d("self", "location provider network out of service");
-                    break;
-            }
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
-        }
-    };
-
-
-
-    android.location.LocationListener locationListnerGPS = new android.location.LocationListener() {
-        @Override
-        public void onLocationChanged(Location loc) {
-            Log.d("self", "gps is enabled in onLocationChanged");
-            dropmarker("crap");
-            isNetworkenabled = false;
-            //create a method for dropping a marker
-            //location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            //remove network location updates. see locationmanager for update removal
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            Log.d("self", "gps is enabled in onStatusChanged");
-
-            switch (status) {
-                case LocationProvider.AVAILABLE:
-                    Log.d("self", "location provider in onstatuschanged is available FOR GPS");
-
-                    break;
-                case LocationProvider.OUT_OF_SERVICE:
-                    try {
-                        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                                MIN_TIME_BW_UPDATES,
-                                MIN_DIST_CHANGE_FOR_UPDATES,
-                                locationListnerNetwork);
-
-                    } catch (SecurityException e) {
-                        Log.d("self", "onstatuschangedgps security exception 2");
-                    }
-                    break;
-                case LocationProvider.TEMPORARILY_UNAVAILABLE:
-                    try {
-                        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                                MIN_TIME_BW_UPDATES,
-                                MIN_DIST_CHANGE_FOR_UPDATES,
-                                locationListnerNetwork);
-
-                    } catch (SecurityException e) {
-                        Log.d("self", "onstatuschangedgps security exception 2");
-                    }
-                    break;
-                default:
-                    try {
-                        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                                MIN_TIME_BW_UPDATES,
-                                MIN_DIST_CHANGE_FOR_UPDATES,
-                                locationListnerNetwork);
-
-                    } catch (SecurityException e) {
-                        Log.d("self", "onstatuschangedgps security exception 2");
-                    }
-                    break;
+                        } catch (SecurityException e) {
+                            Log.d("self", "onstatuschangednetwork security exception 2");
+                        }
+                        break;
+                    default:
+                        Log.d("self", "location provider network out of service");
+                        break;
+                }
             }
 
+            @Override
+            public void onProviderEnabled(String provider) {
 
-            //setup switch statement to check status input parameter
-            //case LocationProvider.AVAILABLE --> output to logd and toast
-            //case LocationProvider.OUT_OF_SERVICE --> request update from network
-            //case LocationProvider.TEMPORARILY_UNAVAILABLE -->request from NETWORK_PROVIDER
-            //case default --> request from provider
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
 
 
-        }
+        android.location.LocationListener locationListnerGPS = new android.location.LocationListener() {
+            @Override
+            public void onLocationChanged(Location loc) {
+                Log.d("self", "gps is enabled in onLocationChanged");
+                dropmarker("gps");
+                isNetworkenabled = false;
+                //create a method for dropping a marker
+                //location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                //remove network location updates. see locationmanager for update removal
+            }
 
-        @Override
-        public void onProviderEnabled(String provider) {
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+                Log.d("self", "gps is enabled in onStatusChanged");
+
+                switch (status) {
+                    case LocationProvider.AVAILABLE:
+                        Log.d("self", "location provider in onstatuschanged is available FOR GPS");
+
+                        break;
+                    case LocationProvider.OUT_OF_SERVICE:
+                        try {
+                            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                                    MIN_TIME_BW_UPDATES,
+                                    MIN_DIST_CHANGE_FOR_UPDATES,
+                                    locationListnerNetwork);
+
+                        } catch (SecurityException e) {
+                            Log.d("self", "onstatuschangedgps security exception 2");
+                        }
+                        break;
+                    case LocationProvider.TEMPORARILY_UNAVAILABLE:
+                        try {
+                            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                                    MIN_TIME_BW_UPDATES,
+                                    MIN_DIST_CHANGE_FOR_UPDATES,
+                                    locationListnerNetwork);
+
+                        } catch (SecurityException e) {
+                            Log.d("self", "onstatuschangedgps security exception 2");
+                        }
+                        break;
+                    default:
+                        try {
+                            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                                    MIN_TIME_BW_UPDATES,
+                                    MIN_DIST_CHANGE_FOR_UPDATES,
+                                    locationListnerNetwork);
+
+                        } catch (SecurityException e) {
+                            Log.d("self", "onstatuschangedgps security exception 2");
+                        }
+                        break;
+                }
+
+                //setup switch statement to check status input parameter
+                //case LocationProvider.AVAILABLE --> output to logd and toast
+                //case LocationProvider.OUT_OF_SERVICE --> request update from network
+                //case LocationProvider.TEMPORARILY_UNAVAILABLE -->request from NETWORK_PROVIDER
+                //case default --> request from provider
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
 //dont need
-        }
+            }
 
-        @Override
-        public void onProviderDisabled(String provider) {
+            @Override
+            public void onProviderDisabled(String provider) {
 //dont need
-        }
+            }
 
-    };
+        };
 
 
+        //public void dropMarker(double lat, double log) {
 
-    //public void dropMarker(double lat, double log) {
     public void dropmarker(String provider) {
 
-        userLocation = new LatLng(0,0);
+        userLocation = new LatLng(0, 0);
         if (locationManager != null) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 // TODO: Consider calling
@@ -300,11 +315,15 @@ public class MapsActivity extends FragmentActivity implements
                 // for ActivityCompat#requestPermissions for more details.
                 return;
             }
-            myLocation = locationManager.getLastKnownLocation(provider);
+            if (provider.equals("gps")) {
+                myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            } else if (provider.equals("network")) {
+                myLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            }
 
         }
 
-        if(myLocation == null) {
+        if (myLocation == null) {
             Toast.makeText(this, "null myLocation", Toast.LENGTH_SHORT).show();
             Log.d("self", "null myloca");
 
@@ -320,24 +339,43 @@ public class MapsActivity extends FragmentActivity implements
 
 
             //drop the beat marker
-             Circle circle = mMap.addCircle(new CircleOptions()
-                     .center(userLocation)
-                     .radius(1)
-                     .strokeColor(Color.RED)
-                     .strokeWidth(2)
-                     .fillColor(Color.BLACK));
-            mMap.animateCamera(update);
+            if (provider.equals("network")) {
+                mMap.addCircle(new CircleOptions()
+                        .center(userLocation)
+                        .radius(3)
+                        .strokeColor(Color.RED)
+                        .strokeWidth(2)
+                        .fillColor(Color.BLACK));
+                mMap.animateCamera(update);
+                // mMap.addMarker(new MarkerOptions().position(userLocation).title("your network location"));
+
+                Log.d("self", "dropping a network marker");
+            }
+            if (provider.equals("gps")) {
+                mMap.addCircle(new CircleOptions()
+                        .center(userLocation)
+                        .radius(3)
+                        .strokeColor(Color.MAGENTA)
+                        .strokeWidth(2)
+                        .fillColor(Color.CYAN));
+                mMap.animateCamera(update);
+                // mMap.addMarker(new MarkerOptions().position(userLocation).title("your gps location"));
+                Log.d("self", "dropping a gps marker");
+            }
+
+            //mMap.addMarker(new MarkerOptions().position(userLocation).title("your location"));
+
 
         }
 
 
         //LatLng drop = new LatLng(lat, log);
         //Marker marker = mMap.addMarker(new MarkerOptions().position(drop).title("your location"));
-                //.icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow)));
+        //.icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow)));
     }
 
     public void changer(View v) {
-        if(ch%2==0){
+        if (ch % 2 == 0) {
             mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         } else {
             mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
