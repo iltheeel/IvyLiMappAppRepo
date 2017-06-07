@@ -2,6 +2,8 @@ package com.example.liaiwei.mapapp;
 
 import android.graphics.Color;
 import android.graphics.drawable.shapes.RectShape;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -15,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -28,6 +31,9 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.io.IOException;
+import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements
         OnMapReadyCallback,
@@ -45,6 +51,9 @@ public class MapsActivity extends FragmentActivity implements
     private boolean canGetLocation = false;
     private Location myLocation;
     private LatLng userLocation;
+    private List<Address> results;
+    private LatLng mypoi;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,7 +87,7 @@ public class MapsActivity extends FragmentActivity implements
         mMap.addMarker(new MarkerOptions().position(markham).title("Born Here"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(markham));
 
-
+        //permission checks. why? i dont know.
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.d("self", "perm chekc 1 died");
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 2);
@@ -94,16 +103,59 @@ public class MapsActivity extends FragmentActivity implements
 
     }
 
-    public void clear (View v) {
+    //a clear method for a button that removes all markers yay
+    public void clear(View v) {
         mMap.clear();
+        Toast.makeText(getApplicationContext(), "Cleared All Markers", Toast.LENGTH_SHORT).show();
     }
 
+    //poi search method with geocoder
+    public void poiSearch(View v) {
+        Log.d("self", "poi search running");
+        EditText findpoi = (EditText) findViewById(R.id.poisearch);
+        String tofind = findpoi.getText().toString();
+        Geocoder codeMe = new Geocoder(getApplicationContext());
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        try {
+            results=  codeMe.getFromLocationName(tofind, 200
+        } catch (IOException e) {
+            Log.d("self", "poi search failed");
+            e.printStackTrace();
+        }
+//cycle thru array and drop markers with names of poi
+        Log.d("self", "the poi search result size is "+ results.size());
+        for(int i =0; i<results.size(); i++) {
+            Address ares = results.get(i);
+            mypoi = new LatLng(ares.getLatitude(), ares.getLongitude());
+            mMap.addMarker(new MarkerOptions().position(mypoi).title(ares.getFeatureName()));
+
+        }
+    }
+
+    //a shitty mess
     public void getLocation(View v) {
+        //this if statement and shit ton of booleans is to remove or add the location listener
         if (canGetLocation == true) {
            canGetLocation = false;
+            locationManager.removeUpdates(locationListnerNetwork);
+            locationManager.removeUpdates(locationListnerGPS);
 
+            Toast.makeText(getApplicationContext(), "Tracking off", Toast.LENGTH_SHORT).show();
         } else {
     canGetLocation= true;
+            Toast.makeText(getApplicationContext(), "Tracking on", Toast.LENGTH_SHORT).show();
         try {
             locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
@@ -119,9 +171,10 @@ public class MapsActivity extends FragmentActivity implements
                 Log.d("self", "getLocation: network is enabled");
             }
 
+            //check if no provider
             if (!isNetworkenabled && !isGPSenabled) {
                 Log.d("self", "getLocation: no provider enabled");
-            } else {
+            } else { //turn on location listener
                 this.canGetLocation = true;
                 if (isNetworkenabled) {
                     Log.d("self", "getlocation network enabled - requesting lcoation updates");
@@ -143,7 +196,7 @@ public class MapsActivity extends FragmentActivity implements
                         // to handle the case where the user grants the permission. See the documentation
                         // for ActivityCompat#requestPermissions for more details.
                         return;
-                    }
+                    }//this chunk keeps appearing in everywhere
                     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                             MIN_TIME_BW_UPDATES,
                             MIN_DIST_CHANGE_FOR_UPDATES,
@@ -167,9 +220,11 @@ public class MapsActivity extends FragmentActivity implements
                 //output logd for network running
                 Log.d("self", "network is running");
                 //drop marker
-                dropmarker("network");
-
+                if(isNetworkenabled) {
+                    dropmarker("network");
+                }
                 //relaunch network provider (requestLocationUpdates (NETWORK_PROVIDER))
+
                 try {
                     locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                             MIN_TIME_BW_UPDATES,
@@ -185,6 +240,7 @@ public class MapsActivity extends FragmentActivity implements
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
                 //output logd and stoast
+                //i have no idea why this is here. i guess i was going to switch back to gps but that seems unnecessary
                 switch (status) {
                     case LocationProvider.AVAILABLE:
                         Log.d("self", "location provider in onstatuschanged FOR NETWORKING is available");
@@ -195,18 +251,11 @@ public class MapsActivity extends FragmentActivity implements
                         break;
                     case LocationProvider.TEMPORARILY_UNAVAILABLE:
                         Log.d("self", "location provider network out of service");
-                        try {
-                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                                    MIN_TIME_BW_UPDATES,
-                                    MIN_DIST_CHANGE_FOR_UPDATES,
-                                    locationListnerNetwork);
-
-                        } catch (SecurityException e) {
-                            Log.d("self", "onstatuschangednetwork security exception 2");
-                        }
+                        Toast.makeText(getApplicationContext(), "tracker unavailable", Toast.LENGTH_SHORT).show();
                         break;
                     default:
                         Log.d("self", "location provider network out of service");
+                        Toast.makeText(getApplicationContext(), "tracker unavailable", Toast.LENGTH_SHORT).show();
                         break;
                 }
             }
@@ -237,13 +286,14 @@ public class MapsActivity extends FragmentActivity implements
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
                 Log.d("self", "gps is enabled in onStatusChanged");
-
+                //test for case where network should be used
                 switch (status) {
                     case LocationProvider.AVAILABLE:
                         Log.d("self", "location provider in onstatuschanged is available FOR GPS");
 
                         break;
                     case LocationProvider.OUT_OF_SERVICE:
+                        isNetworkenabled = true;
                         try {
                             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                                     MIN_TIME_BW_UPDATES,
@@ -255,6 +305,7 @@ public class MapsActivity extends FragmentActivity implements
                         }
                         break;
                     case LocationProvider.TEMPORARILY_UNAVAILABLE:
+                        isNetworkenabled = true;
                         try {
                             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                                     MIN_TIME_BW_UPDATES,
@@ -266,6 +317,7 @@ public class MapsActivity extends FragmentActivity implements
                         }
                         break;
                     default:
+                        isNetworkenabled = true;
                         try {
                             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                                     MIN_TIME_BW_UPDATES,
