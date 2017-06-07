@@ -109,38 +109,45 @@ public class MapsActivity extends FragmentActivity implements
         Toast.makeText(getApplicationContext(), "Cleared All Markers", Toast.LENGTH_SHORT).show();
     }
 
+
     //poi search method with geocoder
     public void poiSearch(View v) {
+        mMap.clear();
         Log.d("self", "poi search running");
         EditText findpoi = (EditText) findViewById(R.id.poisearch);
         String tofind = findpoi.getText().toString();
-        Geocoder codeMe = new Geocoder(getApplicationContext());
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        try {
-            results=  codeMe.getFromLocationName(tofind, 200
-        } catch (IOException e) {
-            Log.d("self", "poi search failed");
-            e.printStackTrace();
-        }
+        if (tofind.trim().isEmpty()) {
+            Toast.makeText(getApplicationContext(), "Nothing in search field", Toast.LENGTH_SHORT).show();
+        } else{
+            Geocoder codeMe = new Geocoder(getApplicationContext());
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            try {
+                results = codeMe.getFromLocationName(tofind, 200, myLocation.getLatitude() - 0.0324637681, myLocation.getLongitude() - 0.03332387845, myLocation.getLatitude() + 0.0324637681, myLocation.getLongitude() + 0.03332387845);
+                //results=  codeMe.getFromLocationName(tofind, 200, 32, -118, 33, -117);
+            } catch (IOException e) {
+                Log.d("self", "poi search failed");
+                e.printStackTrace();
+            }
 //cycle thru array and drop markers with names of poi
-        Log.d("self", "the poi search result size is "+ results.size());
-        for(int i =0; i<results.size(); i++) {
-            Address ares = results.get(i);
-            mypoi = new LatLng(ares.getLatitude(), ares.getLongitude());
-            mMap.addMarker(new MarkerOptions().position(mypoi).title(ares.getFeatureName()));
+            Log.d("self", "the poi search result size is " + results.size());
+            for (int i = 0; i < results.size(); i++) {
+                Address ares = results.get(i);
+                mypoi = new LatLng(ares.getLatitude(), ares.getLongitude());
+                mMap.addMarker(new MarkerOptions().position(mypoi).title(ares.getFeatureName()));
 
+            }
         }
     }
 
@@ -414,18 +421,12 @@ public class MapsActivity extends FragmentActivity implements
                 // mMap.addMarker(new MarkerOptions().position(userLocation).title("your gps location"));
                 Log.d("self", "dropping a gps marker");
             }
-
             //mMap.addMarker(new MarkerOptions().position(userLocation).title("your location"));
-
-
         }
-
-
         //LatLng drop = new LatLng(lat, log);
         //Marker marker = mMap.addMarker(new MarkerOptions().position(drop).title("your location"));
         //.icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow)));
     }
-
     public void changer(View v) {
         if (ch % 2 == 0) {
             mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
@@ -434,5 +435,4 @@ public class MapsActivity extends FragmentActivity implements
         }
         ch++;
     }
-
 }
