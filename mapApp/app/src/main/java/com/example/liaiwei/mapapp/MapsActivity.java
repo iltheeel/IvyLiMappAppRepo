@@ -134,7 +134,7 @@ public class MapsActivity extends FragmentActivity implements
             }
             myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             try {
-                results = codeMe.getFromLocationName(tofind, 200, myLocation.getLatitude() - 0.0324637681, myLocation.getLongitude() - 0.03332387845, myLocation.getLatitude() + 0.0324637681, myLocation.getLongitude() + 0.03332387845);
+                results = codeMe.getFromLocationName(tofind, 200, myLocation.getLatitude() - 0.0324637681, myLocation.getLongitude() - 0.03432387845, myLocation.getLatitude() + 0.0324637681, myLocation.getLongitude() + 0.03432387845);
                 //results=  codeMe.getFromLocationName(tofind, 200, 32, -118, 33, -117);
             } catch (IOException e) {
                 Log.d("self", "poi search failed");
